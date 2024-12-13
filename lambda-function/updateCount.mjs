@@ -6,7 +6,7 @@ const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
 // Constants
-const TABLE_NAME = 'Cloud_Resume_Table';
+const TABLE_NAME = 'Cloud_Resume';
 const PAGE_ID = '1'; // Fixed key for the single page
 
 export const handler = async (event, context) => {

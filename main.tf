@@ -9,17 +9,12 @@ resource "aws_dynamodb_table" "cloud_resume" {
     name = "PageId"
     type = "S"
   }
-
-  attribute {
-    name = "ViewCount"
-    type = "S"
-  }
 }
 
 # Part 2 - AWS S3 for storing Lambda funciton zip archive
 resource "aws_s3_bucket" "cloud_resume_lambda_bucket" {
   # Define the name of the bucket
-  bucket = "cloud_resume_lambda"
+  bucket = "cloud-resume-lambda-code"
 }
 
 resource "aws_s3_bucket_ownership_controls" "cloud_resume_lambda_bucket" {
@@ -94,7 +89,7 @@ resource "aws_iam_role_policy" "lambda_policy_2" {
   name = "ResumeDynamoDBWriteAccess"
 
   # The inline policy document
-  policy = data.aws_iam_policy_document.allow_update_dynamodb
+  policy = data.aws_iam_policy_document.allow_update_dynamodb.json
 
 }
 

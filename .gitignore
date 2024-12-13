@@ -35,4 +35,7 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+# Ignore files for testing in local env
 lambda-function.zip
+response.json

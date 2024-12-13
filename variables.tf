@@ -6,6 +6,6 @@ variable "aws_region" {
 
 variable "dynamodb_table_name" {
   type        = string
-  default     = "cloud_resume"
+  default     = "Cloud_Resume"
   description = "Name of the DynamoDB table."
 }
