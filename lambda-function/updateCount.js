@@ -1,0 +1,70 @@
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+
+// Initialize DynamoDB DocumentClient
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
+
+// Constants
+const TABLE_NAME = 'Cloud_Resume_Table';
+const PAGE_ID = '1'; // Fixed key for the single page
+
+export const handler = async (event, context) => {
+  // Params for updating the database
+  const input = {
+    TableName: TABLE_NAME,
+    Key: {
+      PageId: PAGE_ID,
+    },
+    UpdateExpression:
+      'SET ViewCount = if_not_exists(ViewCount, :startValue) + :incrementValue',
+    ExpressionAttributeValues: {
+      ':startValue': 0, // Initialize count if it doesn't exist
+      ':incrementValue': 1,
+    },
+    ReturnValues: 'ALL_NEW',
+  };
+
+  // Determine configs for CORS
+  const allowedOrigins = ['http://localhost:5173', 'https://resume.jimtan.ca'];
+  const origin = event.headers?.origin;
+  const corsOrigin = allowedOrigins.includes(origin)
+    ? origin
+    : 'https://resume.jimtan.ca'; // Default to production
+
+  try {
+    const command = new UpdateCommand(input);
+    const response = await docClient.send(command);
+
+    return {
+      statusCode: 201,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': corsOrigin,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+      body: JSON.stringify({
+        message: 'View count updated successfully',
+        view_count: response.Attributes.ViewCount,
+      }),
+    };
+  } catch (error) {
+    console.log('Failed to update view count');
+    console.log(error);
+
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: error.message,
+        reference: context.awsRequestId,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': corsOrigin,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+    };
+  }
+};
