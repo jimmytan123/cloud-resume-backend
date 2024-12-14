@@ -135,3 +135,92 @@ resource "aws_cloudwatch_log_group" "update_count" {
 }
 
 # Part 4 - Create AWS API Gateway
+
+# Defines a name for the API Gateway and sets its protocol to HTTP.
+resource "aws_apigatewayv2_api" "lambda" {
+  name          = "ViewCountAPI"
+  protocol_type = "HTTP"
+
+  # CORS configs
+  cors_configuration {
+    allow_credentials = false
+    allow_methods = [
+      "OPTIONS",
+      "POST",
+    ]
+    allow_origins = [
+      "http://localhost:5173",
+      "https://resume.jimtan.ca"
+    ]
+    allow_headers = [
+      "Content-Type",
+    ]
+  }
+}
+
+# Configures the API Gateway to use your Lambda function.
+resource "aws_apigatewayv2_integration" "lambda_integration" {
+  api_id = aws_apigatewayv2_api.lambda.id
+
+  # URI of the Lambda function for a Lambda proxy integration
+  integration_uri    = aws_lambda_function.cloud_resume_lambda.invoke_arn
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
+}
+
+# Configure routes
+resource "aws_apigatewayv2_route" "update_count_route" {
+  api_id = aws_apigatewayv2_api.lambda.id
+
+  route_key = "POST /update-view-count" # POST to {invoke_url}/update-view-count
+  target    = "integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
+}
+
+# Sets up application stages
+resource "aws_apigatewayv2_stage" "api_stage" {
+  api_id = aws_apigatewayv2_api.lambda.id
+
+  name        = "test"
+  auto_deploy = true
+
+  default_route_settings {
+    throttling_burst_limit = 500  # Number of requests the API can handle concurrently
+    throttling_rate_limit  = 1000 # Number of allowed requests per second
+  }
+
+  # Access logging enabled
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.resume_api_gw.arn
+
+    format = jsonencode({
+      requestId               = "$context.requestId"
+      sourceIp                = "$context.identity.sourceIp"
+      requestTime             = "$context.requestTime"
+      protocol                = "$context.protocol"
+      httpMethod              = "$context.httpMethod"
+      resourcePath            = "$context.resourcePath"
+      routeKey                = "$context.routeKey"
+      status                  = "$context.status"
+      responseLength          = "$context.responseLength"
+      integrationErrorMessage = "$context.integrationErrorMessage"
+      }
+    )
+  }
+}
+
+# Create a log group in CloudWatch
+resource "aws_cloudwatch_log_group" "resume_api_gw" {
+  name = "/aws/api_gw/${aws_apigatewayv2_api.lambda.name}"
+
+  retention_in_days = 30
+}
+
+# Permission to invoke the Lambda function
+resource "aws_lambda_permission" "api_gw" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.cloud_resume_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_apigatewayv2_api.lambda.execution_arn}/*/*"
+}
