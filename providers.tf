@@ -10,5 +10,6 @@ provider "aws" {
   }
 
   # Credentials
-  profile = "dev" # my aws profile
+  # Comment out when using GitHub Actions
+  # profile = "dev" # my aws profile
 }

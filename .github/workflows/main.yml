@@ -1,0 +1,65 @@
+name: Terraform Plan - Deploy and Test Lambda
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+env:
+  AWS_REGION: 'us-west-2'
+  TERRAFORM_VERSION: '1.10.2'
+
+jobs:
+  deploy:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+
+    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
+    permissions:
+      id-token: write # This is required for requesting the JWT
+      contents: read # This is required for actions/checkout
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Step 2: Configure AWS Credentials using OIDC
+      - name: Configure AWS Credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }} # use OIDC
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Step 3: Install Terraform CLI
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{env.TERRAFORM_VERSION}}
+
+      # Step 4: Initialize Terraform
+      - name: Terraform Init
+        run: terraform init
+
+      # Step 5: Plan Terraform Changes
+      - name: Terraform Plan
+        run: terraform plan
+
+      # Step 6: Apply Terraform Changes
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+
+  cypress-run:
+    name: Perform E2E test against the deployed API
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Install npm dependencies, cache them correctly and run all Cypress tests
+      - name: Cypress tests
+        uses: cypress-io/github-action@v6
