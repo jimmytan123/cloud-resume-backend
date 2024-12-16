@@ -14,7 +14,7 @@ resource "aws_dynamodb_table" "cloud_resume" {
 # Part 2 - AWS S3 for storing Lambda funciton zip archive
 resource "aws_s3_bucket" "cloud_resume_lambda_bucket" {
   # Define the name of the bucket
-  bucket = "cloud-resume-lambda-code"
+  bucket = "cloud-resume-lambda-code-bucket"
 }
 
 resource "aws_s3_bucket_ownership_controls" "cloud_resume_lambda_bucket" {
