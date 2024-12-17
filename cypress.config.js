@@ -6,6 +6,6 @@ module.exports = defineConfig({
       // implement node event listeners here
     },
     baseUrl:
-      'https://n90ufux0ec.execute-api.us-west-2.amazonaws.com/test', // API Gateway URL
+      'https://iudj4epxh6.execute-api.us-west-2.amazonaws.com/test', // API Gateway URL
   },
 });
