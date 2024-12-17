@@ -60,7 +60,8 @@ resource "aws_s3_object" "cloud_resume_lambda_object" {
 
 # Create an IAM role for the lambda function
 resource "aws_iam_role" "lambda_exec" {
-  name = "RoleForCloudResumeLambda"
+  name        = "RoleForCloudResumeLambda"
+  description = "Role for Lambda function to have access to DynamoDB"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
