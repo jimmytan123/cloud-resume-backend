@@ -74,15 +74,15 @@ jobs:
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         run: terraform apply -auto-approve -input=false
 
-  #cypress-run:
-  #  name: Perform E2E test against the deployed API
-  #  needs: deploy
-  #  runs-on: ubuntu-latest
+  cypress-run:
+    name: Perform E2E test against the deployed API
+    needs: terraform
+    runs-on: ubuntu-latest
 
-  #  steps:
-  #    - name: Checkout
-  #      uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  # Install npm dependencies, cache them correctly and run all Cypress tests
-  #   - name: Cypress tests
-  #      uses: cypress-io/github-action@v6
+      # Install npm dependencies, cache them correctly and run all Cypress tests
+      - name: Cypress tests
+        uses: cypress-io/github-action@v6
