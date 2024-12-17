@@ -12,4 +12,10 @@ terraform {
   }
 
   required_version = "~> 1.2"
+
+  # The backend defines where Terraform stores its state data files
+  backend "s3" {
+    # The bucket, region and key will be added via the GitHub Action workflows
+    encrypt = true
+  }
 }

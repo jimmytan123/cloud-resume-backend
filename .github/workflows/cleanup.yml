@@ -1,0 +1,42 @@
+name: Terraform Cleanup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  terraform-cleanup:
+    name: 'Post Apply Cleanup'
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: 'us-west-2'
+      TERRAFORM_VERSION: '1.10.2'
+
+    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
+    permissions:
+      id-token: write # This is required for requesting the JWT
+      contents: read # This is required for actions/checkout
+
+    steps:
+      - name: 'Checkout GitHub repository'
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }} # use OIDC
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: 'Terraform Init'
+        run: terraform init
+
+      - name: 'Terraform Plan Destroy'
+        run: terraform plan -destroy -out=tfplan-destroy
+
+      - name: 'Terraform Apply Destroy'
+        run: terraform apply -auto-approve tfplan-destroy
