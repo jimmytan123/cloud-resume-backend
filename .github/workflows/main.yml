@@ -81,9 +81,9 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
 
     steps:
-      - name: Checkout
+      - name: Checkout GitHub Repo
         uses: actions/checkout@v4
 
       # Install npm dependencies, cache them correctly and run all Cypress tests
-      - name: Cypress tests
+      - name: Cypress Tests
         uses: cypress-io/github-action@v6
