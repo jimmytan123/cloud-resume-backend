@@ -1,4 +1,4 @@
-# Part 1 - AWS DynamoDB
+# Step 1 - Create AWS DynamoDB
 resource "aws_dynamodb_table" "cloud_resume" {
   name         = var.dynamodb_table_name
   billing_mode = "PAY_PER_REQUEST"
@@ -11,7 +11,7 @@ resource "aws_dynamodb_table" "cloud_resume" {
   }
 }
 
-# Part 2 - AWS S3 for storing Lambda funciton zip archive
+# Step 2 - Create AWS S3 bucket for storing Lambda funciton zip archive
 resource "aws_s3_bucket" "cloud_resume_lambda_bucket" {
   # Define the name of the bucket
   bucket = "cloud-resume-lambda-code-bucket"
@@ -37,13 +37,14 @@ data "archive_file" "lambda_update_count" {
   type = "zip"
 
   # Package entire contents of this directory into the archive.
-  source_dir = "${path.module}/lambda-function"
+  source_dir = "${path.module}/lambda-function" # source of the function directory
 
   output_path = "${path.module}/lambda-function.zip"
 }
 
 # Upload the archive to the S3 bucket
 resource "aws_s3_object" "cloud_resume_lambda_object" {
+  # Target S3 bucket
   bucket = aws_s3_bucket.cloud_resume_lambda_bucket.id
 
   # Name of the object once it is in the bucket
@@ -56,7 +57,7 @@ resource "aws_s3_object" "cloud_resume_lambda_object" {
   etag = filemd5(data.archive_file.lambda_update_count.output_path)
 }
 
-# Part 3 - Create AWS Lambda function
+# Step 3 - Create AWS Lambda function
 
 # Create an IAM role for the lambda function
 resource "aws_iam_role" "lambda_exec" {
@@ -77,7 +78,7 @@ resource "aws_iam_role" "lambda_exec" {
   })
 }
 
-# Attach policy to the IAM role
+# Attach pre-defined policy to the IAM role
 resource "aws_iam_role_policy_attachment" "lambda_policy_1" {
   role       = aws_iam_role.lambda_exec.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
@@ -94,6 +95,7 @@ resource "aws_iam_role_policy" "lambda_policy_2" {
 
 }
 
+// Define the inline policy docss
 data "aws_iam_policy_document" "allow_update_dynamodb" {
   version = "2012-10-17"
 
@@ -110,11 +112,11 @@ data "aws_iam_policy_document" "allow_update_dynamodb" {
   }
 }
 
-// Create function
+// Create Lambda function
 resource "aws_lambda_function" "cloud_resume_lambda" {
   function_name = "UpdateResumeViewCount"
 
-  # Import function from S3
+  # Import function from S3 bucket that contains the zip file
   s3_bucket = aws_s3_bucket.cloud_resume_lambda_bucket.id
   s3_key    = aws_s3_object.cloud_resume_lambda_object.key
 
@@ -135,14 +137,14 @@ resource "aws_cloudwatch_log_group" "update_count" {
   retention_in_days = 30
 }
 
-# Part 4 - Create AWS API Gateway
+# Step 4 - Create AWS API Gateway for Lambda
 
 # Defines a name for the API Gateway and sets its protocol to HTTP.
 resource "aws_apigatewayv2_api" "lambda" {
   name          = "ViewCountAPI"
   protocol_type = "HTTP"
 
-  # CORS configs
+  # CORS configs to allow FE connect BE safely
   cors_configuration {
     allow_credentials = false
     allow_methods = [
@@ -150,8 +152,8 @@ resource "aws_apigatewayv2_api" "lambda" {
       "POST",
     ]
     allow_origins = [
-      "http://localhost:5173",
-      "https://resume.jimtan.ca"
+      "http://localhost:5173",   # local dev environment
+      "https://resume.jimtan.ca" # web app (FE) hosting URL
     ]
     allow_headers = [
       "Content-Type",
@@ -159,7 +161,7 @@ resource "aws_apigatewayv2_api" "lambda" {
   }
 }
 
-# Configures the API Gateway to use your Lambda function.
+# Configures the API Gateway to use the Lambda function.
 resource "aws_apigatewayv2_integration" "lambda_integration" {
   api_id = aws_apigatewayv2_api.lambda.id
 
