@@ -9,6 +9,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 const TABLE_NAME = 'Cloud_Resume';
 const PAGE_ID = '1'; // Fixed key for the single page
 
+// Handler function
 export const handler = async (event, context) => {
   // Params for updating the database
   const input = {
