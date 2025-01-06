@@ -1,9 +1,9 @@
 # Step 1 - Create AWS DynamoDB
 resource "aws_dynamodb_table" "cloud_resume" {
   name         = var.dynamodb_table_name
-  billing_mode = "PAY_PER_REQUEST"
+  billing_mode = "PAY_PER_REQUEST" # On-Demand Mode
 
-  hash_key = "PageId"
+  hash_key = "PageId" # Partition Key
 
   attribute {
     name = "PageId"
