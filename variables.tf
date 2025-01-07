@@ -9,3 +9,9 @@ variable "dynamodb_table_name" {
   default     = "Cloud_Resume"
   description = "Name of the DynamoDB table."
 }
+
+variable "email" {
+  type        = string
+  default     = "jimmytan0424@gmail.com"
+  description = "Email to receive notification."
+}
