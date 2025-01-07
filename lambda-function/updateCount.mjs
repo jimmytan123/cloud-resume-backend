@@ -1,12 +1,12 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { SNSClient } from '@aws-sdk/client-sns';
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
 // Initialize DynamoDB DocumentClient
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-const sns = new SNSClient({});
+const snsClient = new SNSClient({});
 
 // Constants
 const TABLE_NAME = 'Cloud_Resume';
@@ -37,8 +37,7 @@ export const handler = async (event, context) => {
     : 'https://resume.jimtan.ca'; // Default to production
 
   try {
-    const command = new UpdateCommand(input);
-    const response = await docClient.send(command);
+    const response = await docClient.send(new UpdateCommand(input));
 
     const viewCount = response.Attributes.ViewCount;
 
@@ -46,13 +45,13 @@ export const handler = async (event, context) => {
     if (viewCount >= 130) {
       const message = `Congrats! Your resume has been viewed ${viewCount} times!`;
 
-      await sns
-        .publish({
+      await snsClient.send(
+        new PublishCommand({
           TopicArn: process.env.SNS_TOPIC_ARN,
           Message: message,
           Subject: 'Cloud Resume View Count Milestone',
         })
-        .promise();
+      );
     }
 
     return {
