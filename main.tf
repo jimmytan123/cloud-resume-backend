@@ -84,7 +84,7 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_1" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-// Create inline policy for the IAM role
+// Grant DynamoDB Update/Get Permissions to Lambda (inline policy)
 resource "aws_iam_role_policy" "lambda_policy_2" {
   role = aws_iam_role.lambda_exec.name
 
@@ -112,6 +112,33 @@ data "aws_iam_policy_document" "allow_update_dynamodb" {
   }
 }
 
+// Grant SNS Publish Permissions to Lambda (inline policy)
+resource "aws_iam_role_policy" "lambda_policy_3" {
+  role = aws_iam_role.lambda_exec.name
+
+  name = "LambdaSNSPublishPolicy"
+
+  # The inline policy document
+  policy = data.aws_iam_policy_document.allow_notify_sns.json
+
+}
+
+data "aws_iam_policy_document" "allow_notify_sns" {
+  version = "2012-10-17"
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "sns:Publish"
+    ]
+
+    resources = [
+      aws_sns_topic.view_count_notifications.arn
+    ]
+  }
+}
+
 // Create Lambda function
 resource "aws_lambda_function" "cloud_resume_lambda" {
   function_name = "UpdateResumeViewCount"
@@ -128,6 +155,13 @@ resource "aws_lambda_function" "cloud_resume_lambda" {
 
   # Amazon Resource Name (ARN) of the function's execution role. The role provides the function's identity and access to AWS services and resources.
   role = aws_iam_role.lambda_exec.arn
+
+  # Add Lambda env variables
+  environment {
+    variables = {
+      SNS_TOPIC_ARN = aws_sns_topic.view_count_notifications.arn
+    }
+  }
 }
 
 # Set up log group
@@ -226,4 +260,15 @@ resource "aws_lambda_permission" "api_gw" {
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${aws_apigatewayv2_api.lambda.execution_arn}/*/*"
+}
+
+# Add an SNS Topic for notify view count milestones
+resource "aws_sns_topic" "view_count_notifications" {
+  name = "ViewCountNotifications" # topic name
+}
+
+resource "aws_sns_topic_subscription" "email_subscription" {
+  topic_arn = aws_sns_topic.view_count_notifications.arn
+  protocol  = "email"
+  endpoint  = var.email
 }

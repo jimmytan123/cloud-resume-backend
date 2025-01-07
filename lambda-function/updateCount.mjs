@@ -1,9 +1,12 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import AWS from '@aws-sdk';
 
 // Initialize DynamoDB DocumentClient
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
+
+const sns = new AWS.SNS();
 
 // Constants
 const TABLE_NAME = 'Cloud_Resume';
@@ -36,6 +39,21 @@ export const handler = async (event, context) => {
   try {
     const command = new UpdateCommand(input);
     const response = await docClient.send(command);
+
+    const viewCount = response.Attributes.ViewCount;
+
+    // Check threshold and publish to SNS if exceeded
+    if (viewCount >= 130) {
+      const message = `Congrats! Your resume has been viewed ${viewCount} times!`;
+
+      await sns
+        .publish({
+          TopicArn: process.env.SNS_TOPIC_ARN,
+          Message: message,
+          Subject: 'Cloud Resume View Count Milestone',
+        })
+        .promise();
+    }
 
     return {
       statusCode: 201,
