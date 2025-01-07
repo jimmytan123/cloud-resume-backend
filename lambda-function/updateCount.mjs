@@ -12,6 +12,9 @@ const snsClient = new SNSClient({});
 const TABLE_NAME = 'Cloud_Resume';
 const PAGE_ID = '1'; // Fixed key for the single page
 
+// Milestones to trigger notifications
+const milestones = [140, 200, 300, 400, 500, 1000];
+
 // Handler function
 export const handler = async (event, context) => {
   // Params for updating the database
@@ -42,7 +45,7 @@ export const handler = async (event, context) => {
     const viewCount = response.Attributes.ViewCount;
 
     // Check threshold and publish to SNS if exceeded
-    if (viewCount >= 130) {
+    if (milestones.includes(viewCount)) {
       const message = `Congrats! Your resume has been viewed ${viewCount} times!`;
 
       await snsClient.send(
