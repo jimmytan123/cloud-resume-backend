@@ -159,7 +159,7 @@ resource "aws_lambda_function" "cloud_resume_lambda" {
   # Add Lambda env variables
   environment {
     variables = {
-      SNS_TOPIC_ARN = aws_sns_topic.view_count_notifications.arn
+      SNS_TOPIC_ARN = aws_sns_topic.view_count_notifications.arn # ARN
     }
   }
 }
