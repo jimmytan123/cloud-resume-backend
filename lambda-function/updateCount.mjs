@@ -1,12 +1,12 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import AWS from '@aws-sdk';
+import { SNSClient } from '@aws-sdk/client-sns';
 
 // Initialize DynamoDB DocumentClient
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-const sns = new AWS.SNS();
+const sns = new SNSClient({});
 
 // Constants
 const TABLE_NAME = 'Cloud_Resume';
